@@ -1,19 +1,42 @@
 import apiClient from './apiClient';
 
-interface Offer {
+type UserStatus = 'accepted' | 'rejected' | 'pending';
+type SubscriptionType = 'yearly' | 'monthly';
+
+export type Offer = {
   id: number;
   user_name: string;
   email: string;
   phone: string;
   company: string;
   jobTitle: string;
-  status: string;
-  type: string;
-}
+  status: UserStatus;
+  type: SubscriptionType;
+  price: number;
+};
 
-interface GetOfferResponse {
+export type Links = {
+  first: string;
+  last: string;
+  prev: string | null;
+  next: string | null;
+};
+
+export type Meta = {
+  current_page: number;
+  from: number;
+  last_page: number;
+  path: string;
+  per_page: number;
+  to: number;
+  total: number;
+};
+
+export type OfferApiResponse = {
   data: Offer[];
-}
+  links: Links;
+  meta: Meta;
+};
 
 interface OfferRequest {
   plan_type: 'monthly' | 'yearly' | 'pay_as_you_go';
@@ -35,7 +58,7 @@ interface CreateOfferResponse {
  * @param {string} search - Search query.
  * @param {string} type - Offer type (e.g., 'yearly').
  * @param {string} status - Offer status (e.g., 'rejected').
- * @returns {Promise<GetOfferResponse>} - Returns a promise with the response data.
+ * @returns {Promise<OfferApiResponse>} - Returns a promise with the response data.
  */
 export const getOffers = async (
   page: number = 1,
@@ -43,9 +66,9 @@ export const getOffers = async (
   search?: string,
   type?: string,
   status?: string,
-): Promise<GetOfferResponse> => {
+): Promise<OfferApiResponse> => {
   try {
-    const response = await apiClient.get<GetOfferResponse>('/offers', {
+    const response = await apiClient.get<OfferApiResponse>('/offers', {
       params: { page, per_page, search, type, status },
     });
     return response.data;
