@@ -1,6 +1,6 @@
 'use client';
 
-import { AnalyticsData, WebsiteVisits } from '@/services/dashboardService';
+import { WebsiteVisits } from '@/services/dashboardService';
 import { Box, Card, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { ApexOptions } from 'apexcharts';
@@ -47,7 +47,7 @@ const LegendItem = styled(Box)({
 
 // Styled Legend Text
 const LegendText = styled(Typography)({
-  fontFamily: "'Public Sans', sans-serif",
+  fontFamily: '"Public Sans", sans-serif',
   fontStyle: 'normal',
   fontWeight: 500,
   fontSize: '13px',
@@ -73,14 +73,13 @@ const getChartData = (data: WebsiteVisits) => {
   const mobileData = Object.values(data).map((day) => day.mobile);
 
   const chartOptions: ApexOptions = {
-    // ✅ Explicitly define type here
     chart: { type: 'bar', height: 300, toolbar: { show: false } },
     plotOptions: { bar: { horizontal: false, columnWidth: '40%' } },
     colors: ['#007867', '#FFAB00'],
     dataLabels: { enabled: false },
     xaxis: { categories },
     yaxis: { labels: { formatter: (val: number) => val.toFixed(0) } },
-    legend: { show: false }, // ✅ Hide ApexCharts default legend
+    legend: { show: false },
   };
 
   const chartSeries = [

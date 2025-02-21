@@ -1,13 +1,15 @@
+/* eslint-disable quotes */
 'use client';
 
-import { AttachMoney, CalendarToday } from '@mui/icons-material';
+import { createOffer, OfferRequest } from '@/services/offersService';
+import { fetchUsers, User } from '@/services/userService';
+import { AttachMoney } from '@mui/icons-material';
 import {
   Box,
   Button,
   Card,
   Checkbox,
   FormControlLabel,
-  IconButton,
   InputAdornment,
   MenuItem,
   Radio,
@@ -17,7 +19,11 @@ import {
   Typography,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import React from 'react';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { format } from 'date-fns';
+import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 // Styled Card Component
@@ -35,7 +41,6 @@ const StyledCard = styled(Card)({
 
 // Styled Header
 const Header = styled(Box)({
-  boxSizing: 'border-box',
   display: 'flex',
   flexDirection: 'row',
   alignItems: 'flex-start',
@@ -46,6 +51,7 @@ const Header = styled(Box)({
   borderBottom: '1px solid rgba(145, 158, 171, 0.2)',
 });
 
+// Styled Button
 const StyledButton = styled(Button)({
   display: 'flex',
   flexDirection: 'row',
@@ -59,7 +65,6 @@ const StyledButton = styled(Button)({
   background: '#1C252E',
   borderRadius: '8px',
   color: '#FFFFFF',
-  fontFamily: "'Public Sans', sans-serif",
   fontWeight: 700,
   fontSize: '15px',
   lineHeight: '26px',
@@ -71,25 +76,64 @@ const StyledButton = styled(Button)({
 
 // Form Data Interface
 interface FormData {
-  planType: string;
-  additions: string[];
+  planType: 'monthly' | 'yearly' | 'pay_as_you_go';
+  additions: ('refundable' | 'on_demand' | 'negotiable')[];
   user: string;
   expired: string;
   price: string;
 }
 
 const CreateOffer: React.FC = () => {
-  const { control, register, handleSubmit } = useForm<FormData>({
+  const [users, setUsers] = useState<User[]>([]);
+  const { control, register, handleSubmit, setValue } = useForm<FormData>({
     defaultValues: {
-      planType: 'Monthly',
-      additions: ['Refundable'],
-      user: 'Jason Momoa',
-      expired: '03 May 2023',
+      planType: 'monthly',
+      additions: [],
+      user: '',
+      expired: '',
       price: '',
     },
   });
 
-  const onSubmit = (data: FormData) => console.log('Form Data:', data);
+  // Fetch users when component loads
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const response = await fetchUsers(1, 20, '');
+        setUsers(response.data);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+    loadUsers();
+  }, []);
+
+  // Handle Form Submission
+  const onSubmit = async (data: FormData) => {
+    try {
+      const selectedUser = users.find(
+        (user) => user.id.toString() === data.user,
+      );
+      if (!selectedUser) {
+        alert('Please select a valid user.');
+        return;
+      }
+
+      const offerData: OfferRequest = {
+        plan_type: data.planType,
+        additions: data.additions,
+        user_id: parseInt(data.user),
+        expired: data.expired,
+        price: parseFloat(data.price),
+      };
+
+      const response = await createOffer(offerData);
+      alert(response.message);
+    } catch (error) {
+      console.error('Error creating offer:', error);
+      alert('Failed to create offer. Please try again.');
+    }
+  };
 
   return (
     <>
@@ -101,7 +145,7 @@ const CreateOffer: React.FC = () => {
               Create Offer
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Send onboarding offer to new user
+              Send onboarding offer to a new user
             </Typography>
           </Box>
         </Header>
@@ -124,17 +168,17 @@ const CreateOffer: React.FC = () => {
               render={({ field }) => (
                 <RadioGroup {...field} row>
                   <FormControlLabel
-                    value="Pay As You Go"
+                    value="pay_as_you_go"
                     control={<Radio />}
                     label="Pay As You Go"
                   />
                   <FormControlLabel
-                    value="Monthly"
+                    value="monthly"
                     control={<Radio />}
                     label="Monthly"
                   />
                   <FormControlLabel
-                    value="Yearly"
+                    value="yearly"
                     control={<Radio />}
                     label="Yearly"
                   />
@@ -151,19 +195,19 @@ const CreateOffer: React.FC = () => {
             <Box display="flex" gap={2}>
               <FormControlLabel
                 control={
-                  <Checkbox {...register('additions')} value="Refundable" />
+                  <Checkbox {...register('additions')} value="refundable" />
                 }
                 label="Refundable"
               />
               <FormControlLabel
                 control={
-                  <Checkbox {...register('additions')} value="On demand" />
+                  <Checkbox {...register('additions')} value="on_demand" />
                 }
                 label="On demand"
               />
               <FormControlLabel
                 control={
-                  <Checkbox {...register('additions')} value="Negotiable" />
+                  <Checkbox {...register('additions')} value="negotiable" />
                 }
                 label="Negotiable"
               />
@@ -180,11 +224,12 @@ const CreateOffer: React.FC = () => {
               control={control}
               render={({ field }) => (
                 <Select {...field} fullWidth>
-                  <MenuItem value="Jason Momoa">Jason Momoa</MenuItem>
-                  <MenuItem value="Chris Hemsworth">Chris Hemsworth</MenuItem>
-                  <MenuItem value="Robert Downey Jr.">
-                    Robert Downey Jr.
-                  </MenuItem>
+                  <MenuItem value="">-- Select a User --</MenuItem>
+                  {users.map((user) => (
+                    <MenuItem key={user.id} value={user.id.toString()}>
+                      {user.name} ({user.email})
+                    </MenuItem>
+                  ))}
                 </Select>
               )}
             />
@@ -195,18 +240,24 @@ const CreateOffer: React.FC = () => {
             <Typography fontWeight="600" mb={1}>
               Expired
             </Typography>
-            <TextField
-              fullWidth
-              {...register('expired')}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton>
-                      <CalendarToday fontSize="small" />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
+            <Controller
+              name="expired"
+              control={control}
+              render={({ field }) => (
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <DatePicker
+                    sx={{ width: '100%' }}
+                    value={field.value ? new Date(field.value) : null}
+                    onChange={(newValue: Date | null) => {
+                      if (newValue) {
+                        field.onChange(format(newValue, 'yyyy-MM-dd'));
+                      } else {
+                        field.onChange(null);
+                      }
+                    }}
+                  />
+                </LocalizationProvider>
+              )}
             />
           </Box>
 
@@ -218,6 +269,7 @@ const CreateOffer: React.FC = () => {
             <TextField
               fullWidth
               placeholder="Price"
+              type="number"
               {...register('price')}
               InputProps={{
                 startAdornment: (
@@ -228,19 +280,13 @@ const CreateOffer: React.FC = () => {
               }}
             />
           </Box>
+
+          {/* Submit Button */}
+          <Box display="flex" justifyContent="flex-end">
+            <StyledButton type="submit">Send Offer</StyledButton>
+          </Box>
         </Box>
       </StyledCard>
-
-      <Box
-        sx={{
-          margin: '20px auto',
-          maxWidth: '720px',
-          display: 'flex',
-          justifyContent: 'flex-end',
-        }}
-      >
-        <StyledButton>Send Offer</StyledButton>
-      </Box>
     </>
   );
 };

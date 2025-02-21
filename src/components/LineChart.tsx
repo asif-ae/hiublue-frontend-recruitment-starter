@@ -35,7 +35,6 @@ const lineChartOptions: ApexOptions = {
 const LineChart: React.FC<{
   offers_sent: OffersSent;
 }> = ({ offers_sent }) => {
-  console.log({ offers_sent });
   const lineChartSeries = [
     { name: 'Offers Sent', data: Object.values(offers_sent) },
   ];

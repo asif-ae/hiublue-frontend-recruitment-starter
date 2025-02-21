@@ -84,7 +84,6 @@ export default function SignIn() {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       const response = await login(data);
-      console.log({ response });
       authLogin(response.token, response.user);
       router.push('/');
     } catch (error: any) {

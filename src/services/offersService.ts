@@ -38,7 +38,7 @@ export type OfferApiResponse = {
   meta: Meta;
 };
 
-interface OfferRequest {
+export interface OfferRequest {
   plan_type: 'monthly' | 'yearly' | 'pay_as_you_go';
   additions: ('refundable' | 'on_demand' | 'negotiable')[];
   user_id: number;

@@ -33,7 +33,6 @@ export default function DashboardView() {
       }
     })();
   }, []);
-  console.log({ dashboardSummary, dashboardStat });
   return (
     <DashboardLayout>
       <DashboardHeader />
