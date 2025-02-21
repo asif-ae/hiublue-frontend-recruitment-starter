@@ -1,28 +1,29 @@
 'use client';
 
-import React, { useState } from 'react';
+import { getOffers, Offer, OfferApiResponse } from '@/services/offersService';
+import { Edit, MoreVert, Search } from '@mui/icons-material';
 import {
   Box,
   Card,
-  Typography,
+  Chip,
+  IconButton,
+  InputAdornment,
+  MenuItem,
+  Select,
+  Tab,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
-  TableRow,
   TablePagination,
-  TextField,
-  Select,
-  MenuItem,
-  IconButton,
-  InputAdornment,
+  TableRow,
   Tabs,
-  Tab,
-  Chip,
+  TextField,
+  Typography,
 } from '@mui/material';
-import { Search, Edit, MoreVert } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import React, { useEffect, useState } from 'react';
 
 // Styled Card Component
 const StyledCard = styled(Card)({
@@ -43,21 +44,21 @@ const StyledTableCell = styled(TableCell)({
 // Offer Status Colors
 const getStatusChip = (status: string) => {
   switch (status) {
-    case 'Accepted':
+    case 'accepted':
       return (
         <Chip
           label="Accepted"
           sx={{ backgroundColor: '#D1FAE5', color: '#065F46' }}
         />
       );
-    case 'Rejected':
+    case 'rejected':
       return (
         <Chip
           label="Rejected"
           sx={{ backgroundColor: '#FEE2E2', color: '#B91C1C' }}
         />
       );
-    case 'Pending':
+    case 'pending':
       return (
         <Chip
           label="Pending"
@@ -69,66 +70,35 @@ const getStatusChip = (status: string) => {
   }
 };
 
-// Dummy Data
-const offers = [
-  {
-    id: 1,
-    name: 'Jayvion Simon',
-    email: 'nannie.abernathy70@yahoo.com',
-    phone: '365-374-4961',
-    company: 'Lueilwitz and Sons',
-    jobTitle: 'CEO',
-    type: 'Monthly',
-    status: 'Accepted',
-  },
-  {
-    id: 2,
-    name: 'Jayvion Simon',
-    email: 'nannie.abernathy70@yahoo.com',
-    phone: '365-374-4961',
-    company: 'Lueilwitz and Sons',
-    jobTitle: 'CEO',
-    type: 'Yearly',
-    status: 'Rejected',
-  },
-  {
-    id: 3,
-    name: 'Jayvion Simon',
-    email: 'nannie.abernathy70@yahoo.com',
-    phone: '365-374-4961',
-    company: 'Lueilwitz and Sons',
-    jobTitle: 'CEO',
-    type: 'Monthly',
-    status: 'Pending',
-  },
-  {
-    id: 4,
-    name: 'Jayvion Simon',
-    email: 'nannie.abernathy70@yahoo.com',
-    phone: '365-374-4961',
-    company: 'Lueilwitz and Sons',
-    jobTitle: 'CEO',
-    type: 'Pay As You Go',
-    status: 'Accepted',
-  },
-  {
-    id: 5,
-    name: 'Jayvion Simon',
-    email: 'nannie.abernathy70@yahoo.com',
-    phone: '365-374-4961',
-    company: 'Lueilwitz and Sons',
-    jobTitle: 'CEO',
-    type: 'Monthly',
-    status: 'Accepted',
-  },
-];
-
 const OfferList: React.FC = () => {
+  const [offers, setOffers] = useState<Offer[]>([]);
   const [tab, setTab] = useState(0);
   const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState('All');
-  const [page, setPage] = useState(0);
+  const [filterType, setFilterType] = useState<string>('All');
+  const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [totalOffers, setTotalOffers] = useState(0);
+
+  // Fetch Offers from API
+  const fetchOffers = async () => {
+    try {
+      const response: OfferApiResponse = await getOffers(
+        page,
+        rowsPerPage,
+        search,
+        filterType !== 'All' ? filterType : undefined,
+        tab === 1 ? 'accepted' : undefined,
+      );
+      setOffers(response.data);
+      setTotalOffers(response.meta.total);
+    } catch (error) {
+      console.error('Error fetching offers:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchOffers();
+  }, [page, rowsPerPage, search, filterType, tab]);
 
   // Handle Tab Change
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) =>
@@ -136,22 +106,13 @@ const OfferList: React.FC = () => {
 
   // Handle Pagination
   const handleChangePage = (_event: unknown, newPage: number) =>
-    setPage(newPage);
+    setPage(newPage + 1);
   const handleChangeRowsPerPage = (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+    setPage(1);
   };
-
-  // Filtered Offers
-  const filteredOffers = offers.filter(
-    (offer) =>
-      (tab === 1 ? offer.status === 'Accepted' : true) &&
-      (filterType === 'All' || offer.type === filterType) &&
-      (offer.name.toLowerCase().includes(search.toLowerCase()) ||
-        offer.email.toLowerCase().includes(search.toLowerCase())),
-  );
 
   return (
     <StyledCard>
@@ -193,9 +154,8 @@ const OfferList: React.FC = () => {
           fullWidth
         >
           <MenuItem value="All">All</MenuItem>
-          <MenuItem value="Monthly">Monthly</MenuItem>
-          <MenuItem value="Yearly">Yearly</MenuItem>
-          <MenuItem value="Pay As You Go">Pay As You Go</MenuItem>
+          <MenuItem value="monthly">Monthly</MenuItem>
+          <MenuItem value="yearly">Yearly</MenuItem>
         </Select>
       </Box>
 
@@ -214,31 +174,29 @@ const OfferList: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredOffers
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((offer) => (
-                <TableRow key={offer.id}>
-                  <TableCell>
-                    <Typography fontWeight={600}>{offer.name}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {offer.email}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>{offer.phone}</TableCell>
-                  <TableCell>{offer.company}</TableCell>
-                  <TableCell>{offer.jobTitle}</TableCell>
-                  <TableCell>{offer.type}</TableCell>
-                  <TableCell>{getStatusChip(offer.status)}</TableCell>
-                  <TableCell align="right">
-                    <IconButton>
-                      <Edit fontSize="small" />
-                    </IconButton>
-                    <IconButton>
-                      <MoreVert fontSize="small" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
+            {offers.map((offer) => (
+              <TableRow key={offer.id}>
+                <TableCell>
+                  <Typography fontWeight={600}>{offer.user_name}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {offer.email}
+                  </Typography>
+                </TableCell>
+                <TableCell>{offer.phone}</TableCell>
+                <TableCell>{offer.company}</TableCell>
+                <TableCell>{offer.jobTitle}</TableCell>
+                <TableCell>{offer.type}</TableCell>
+                <TableCell>{getStatusChip(offer.status)}</TableCell>
+                <TableCell align="right">
+                  <IconButton>
+                    <Edit fontSize="small" />
+                  </IconButton>
+                  <IconButton>
+                    <MoreVert fontSize="small" />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </TableContainer>
@@ -247,9 +205,9 @@ const OfferList: React.FC = () => {
       <TablePagination
         rowsPerPageOptions={[5, 10, 25]}
         component="div"
-        count={filteredOffers.length}
+        count={totalOffers}
         rowsPerPage={rowsPerPage}
-        page={page}
+        page={page - 1}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
