@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
-import dynamic from 'next/dynamic';
-import { Card, Typography, Box } from '@mui/material';
+import { AnalyticsData, WebsiteVisits } from '@/services/dashboardService';
+import { Box, Card, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { ApexOptions } from 'apexcharts';
+import dynamic from 'next/dynamic';
+import React from 'react';
 
 // Dynamically import ApexCharts to avoid SSR issues
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -54,26 +55,48 @@ const LegendText = styled(Typography)({
   color: '#1C252E',
 });
 
-const barChartOptions: ApexOptions = {
-  chart: { type: 'bar', height: 300, toolbar: { show: false } },
-  plotOptions: {
-    bar: { horizontal: false, columnWidth: '40%' },
-  },
-  colors: ['#007867', '#FFAB00'],
-  dataLabels: { enabled: false },
-  xaxis: {
-    categories: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-  },
-  yaxis: { labels: { formatter: (val) => val.toFixed(0) } },
-  legend: { show: false }, // ✅ Hide ApexCharts default legend since we are using custom legend
+// Mapping for days
+const dayMapping: Record<string, string> = {
+  sunday: 'Sun',
+  monday: 'Mon',
+  tuesday: 'Tue',
+  wednesday: 'Wed',
+  thursday: 'Thu',
+  friday: 'Fri',
+  saturday: 'Sat',
 };
 
-const barChartSeries = [
-  { name: 'Desktop', data: [40, 65, 25, 50, 55, 60, 90] },
-  { name: 'Mobile', data: [30, 45, 40, 35, 25, 10, 50] },
-];
+// Function to transform data for the chart
+const getChartData = (data: WebsiteVisits) => {
+  const categories = Object.keys(data).map((day) => dayMapping[day]);
+  const desktopData = Object.values(data).map((day) => day.desktop);
+  const mobileData = Object.values(data).map((day) => day.mobile);
 
-const BarChart: React.FC = () => {
+  const chartOptions: ApexOptions = {
+    // ✅ Explicitly define type here
+    chart: { type: 'bar', height: 300, toolbar: { show: false } },
+    plotOptions: { bar: { horizontal: false, columnWidth: '40%' } },
+    colors: ['#007867', '#FFAB00'],
+    dataLabels: { enabled: false },
+    xaxis: { categories },
+    yaxis: { labels: { formatter: (val: number) => val.toFixed(0) } },
+    legend: { show: false }, // ✅ Hide ApexCharts default legend
+  };
+
+  const chartSeries = [
+    { name: 'Desktop', data: desktopData },
+    { name: 'Mobile', data: mobileData },
+  ];
+
+  return { chartOptions, chartSeries };
+};
+
+const BarChart: React.FC<{ website_visits: WebsiteVisits }> = ({
+  website_visits,
+}) => {
+  // Get transformed data
+  const { chartOptions, chartSeries } = getChartData(website_visits);
+
   return (
     <StyledCard>
       <Typography variant="h6" fontWeight="600" color="text.primary">
@@ -110,8 +133,8 @@ const BarChart: React.FC = () => {
       {/* Chart */}
       <Box width="100%" height="100%" mt={2}>
         <Chart
-          options={barChartOptions}
-          series={barChartSeries}
+          options={chartOptions}
+          series={chartSeries}
           type="bar"
           height={300}
         />

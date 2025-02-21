@@ -1,6 +1,6 @@
 import apiClient from './apiClient';
 
-interface DashboardSummary {
+export interface DashboardSummary {
   current: {
     active_users: number;
     clicks: number;
@@ -13,16 +13,30 @@ interface DashboardSummary {
   };
 }
 
-interface WebsiteVisits {
-  [day: string]: {
+type DayOfWeek =
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday'
+  | 'sunday';
+
+export type WebsiteVisits = {
+  [key in DayOfWeek]: {
     desktop: number;
     mobile: number;
   };
-}
+};
 
-interface DashboardStat {
+export type OffersSent = {
+  [key in DayOfWeek]: number;
+};
+
+export type AnalyticsData = {
   website_visits: WebsiteVisits;
-}
+  offers_sent: OffersSent;
+};
 
 /**
  * Fetches the dashboard summary data.
@@ -49,13 +63,13 @@ export const getDashboardSummary = async (
 /**
  * Fetches the dashboard stat data.
  * @param {string} filter - The filter for the stat ('this-week' or 'prev-week').
- * @returns {Promise<DashboardStat>} - Returns a promise with the response data.
+ * @returns {Promise<AnalyticsData>} - Returns a promise with the response data.
  */
 export const getDashboardStat = async (
   filter: 'this-week' | 'prev-week' = 'this-week',
-): Promise<DashboardStat> => {
+): Promise<AnalyticsData> => {
   try {
-    const response = await apiClient.get<DashboardStat>('/dashboard/stat', {
+    const response = await apiClient.get<AnalyticsData>('/dashboard/stat', {
       params: { filter },
     });
     return response.data;

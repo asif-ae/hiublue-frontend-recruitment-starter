@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
-import dynamic from 'next/dynamic';
-import { Card, Typography, Box } from '@mui/material';
+import { OffersSent } from '@/services/dashboardService';
+import { Box, Card, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { ApexOptions } from 'apexcharts';
+import dynamic from 'next/dynamic';
+import React from 'react';
 
 // Dynamically import ApexCharts to avoid SSR issues
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -31,11 +32,13 @@ const lineChartOptions: ApexOptions = {
   dataLabels: { enabled: false },
 };
 
-const lineChartSeries = [
-  { name: 'Offers Sent', data: [10, 20, 40, 60, 80, 90, 60] },
-];
-
-const LineChart: React.FC = () => {
+const LineChart: React.FC<{
+  offers_sent: OffersSent;
+}> = ({ offers_sent }) => {
+  console.log({ offers_sent });
+  const lineChartSeries = [
+    { name: 'Offers Sent', data: Object.values(offers_sent) },
+  ];
   return (
     <StyledCard>
       <Typography variant="h6" fontWeight="600" color="text.primary">
